@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_score, cross_val_predict
 from sklearn.base import clone, BaseEstimator
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, precision_recall_curve, roc_curve
 
 mnist = fetch_openml('mnist_784', version=1)
 
@@ -61,8 +61,57 @@ print(cross_val_score(never5clf, X_train, y_train_5, cv=3, scoring='accuracy'))
 
 
 # CONFUSION MATRIX
-y_train_pred = cross_val_predict(sgd_clf, X_train, y_train, cv=3)
-confusion_matrix(y_train_5, y_train_pred)
+y_train_pred = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3)
+confusion_matrix(y_train_5, y_train_pred)  #TN, FP, FN, TP
+
+# precision tp / (tp + fp)
+print(precision_score(y_train_5, y_train_pred))
+
+# recall tp / (tp + fn)
+print(recall_score(y_train_5, y_train_pred))
+
+# F1 = 2 x precision x recall / (precision x recall)
+f1_score(y_train_5, y_train_pred)
+
+# DECISION FUNCTION
+
+y_scores = sgd_clf.decision_function(X_test[0].reshape(1, -1))
+threshold = 0
+y_some_digital_pred = (y_scores > threshold)
+
+y_scores = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3, method="decision_function")
+
+precisions, recalls, threshold = precision_recall_curve(y_train_5, y_scores)
+
+
+def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
+    plt.plot(thresholds, precisions[:-1], "b--", label="Precision")
+    plt.plot(thresholds, recalls[:-1], "g-", label="Recall")
+    plt.legend(loc="center right", fontsize=16)
+    plt.xlabel("Threshold", fontsize=16)
+    plt.grid(True)
+    plt.axis([-50000, 50000, 0, 1]) # x,y axis
+
+plot_precision_recall_vs_threshold(precisions, recalls, threshold)
+plt.show()
+
+
+# ROC CURVE
+
+fpr, tpr, thresholds = roc_curve(y_train_5, y_scores)
+
+def plot_roc(fpr, tpr, label=None):
+    plt.plot(fpr, tpr, linewidth=2, label=label)
+    plt.plot([0,1], [0,1], 'k--')
+    plt.xlabel("False Positive Rate", fontsize=16)
+    plt.ylabel("True Pos Rate (Recall)", fontsize=16)
+    plt.grid(True)
+    plt.axis([0,1, 0,1])
+
+plot_roc(fpr, tpr)
+plt.show()
+
+
 
 
 
