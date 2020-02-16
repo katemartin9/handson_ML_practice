@@ -83,6 +83,3 @@ regressor.fit(X, y.ravel())
 print('Intercept:', regressor.intercept_,'\nSlope:', regressor.coef_)
 
 
-"""Mini-batch Gradient Descent"""
-
-
