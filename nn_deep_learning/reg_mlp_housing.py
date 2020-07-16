@@ -56,7 +56,7 @@ model.summary()
 model.compile(loss='mean_squared_error',
               optimizer=keras.optimizers.SGD(lr=0.003))
 history = model.fit(X_train, y_train,
-                    epoch=20,
+                    epochs=20,
                     validation_data=(X_valid, y_valid))
 mse_test1 = model.evaluate(X_test, y_test)
 y_pred1 = model.predict(X_new)
@@ -76,7 +76,7 @@ X_valid_A, X_valid_B = X_valid[:, :5], X_valid[:, 2:]
 X_test_A, X_test_B = X_test[:, :5], X_test[:, 2:]
 X_new_A, X_new_B = X_test_A[:3], X_test_B[:3]
 
-history2 = model.fit((X_train_A, X_train_B), y_train, epoch=20,
+history2 = model.fit((X_train_A, X_train_B), y_train, epochs=20,
                     validation_data=((X_valid_A, X_valid_B), y_valid))
 mse_test2 = model.evaluate((X_test_A, X_test_B), y_test)
 
@@ -112,4 +112,17 @@ history = model.fit((X_train_A, X_train_B), (y_train, y_train), epochs=10,
                     validation_data=((X_valid_A, X_valid_B), (y_valid, y_valid)))
 total_loss, main_loss, aux_loss = model.evaluate((X_test_A, X_test_B), (y_test, y_test))
 y_pred_main, y_pred_aux = model.predict((X_new_A, X_new_B))
+
+# Saving Model
+model.save('my_keras_model.h5')
+
+# Loading Model
+model.load_model('my_keras_model.h5')
+
+# saving model when it performs best
+checkpoint = keras.callbacks.ModelCheckpoint('my_keras_model.h5',
+                                             save_best_only=True)
+model.fit((X_train_A, X_train_B), (y_train, y_train), epochs=10,
+                    validation_data=((X_valid_A, X_valid_B), (y_valid, y_valid)),
+          callbacks=[checkpoint])
 
