@@ -2,14 +2,15 @@ import os
 import time
 from tensorflow import keras
 import numpy as np
-root_logdir = os.path.join(os.curdir, "my_logs")
 import tensorflow as tf
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from scipy.stats import reciprocal
+from sklearn.model_selection import RandomizedSearchCV
 
+root_logdir = os.path.join(os.curdir, "my_logs")
 housing = fetch_california_housing()
-
 X_train_full, X_test, y_train_full, y_test = train_test_split(housing.data,
                                                               housing.target,
                                                               random_state=42)
@@ -46,5 +47,35 @@ history = model.fit(X_train, y_train, epochs=30,
                     callbacks=[checkpoint_cb, tensorboard_cb])
 
 # Start tensorboard
-"""tensorboard --logdir=./my_logs --port=6006"""
+"""tensorboard --logdir=my_logs --port=6006"""
 
+
+# Hyperparams tuning
+def build_model(n_hidden=1, n_neurons=30, lr=0.003, input_shape=[8]):
+    model = keras.models.Sequential()
+    model.add(keras.layers.InputLayer(input_shape=input_shape))
+    for layer in range(n_hidden):
+        model.add(keras.layers.Dense(n_neurons, activation='relu'))
+    model.add(keras.layers.Dense(1))
+    optimizer = keras.optimizers.SGD(lr=lr)
+    model.compile()
+    return model
+
+
+keras_reg = keras.wrappers.scikit_learn.KerasRegressor(build_model)
+
+param_dists = {
+    'h_hidden': [0, 1, 2, 3],
+    'n_neurons': np.arange(1, 100),
+    'lr': reciprocal(0.0004, 0.002)
+}
+
+rnd_search_cv = RandomizedSearchCV(keras_reg, param_dists, n_iter=10, cv=3)
+rnd_search_cv.fit(X_train, y_train, epochs=100,
+                  validation_data=(X_valid, y_valid),
+                  callbacks=[keras.callbacks.EarlyStopping(patience=10)])
+
+# accessing best params
+rnd_search_cv.best_params_
+rnd_search_cv.best_score_
+model = rnd_search_cv.best_estimator_.model
