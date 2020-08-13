@@ -168,3 +168,19 @@ model.add(keras.layers.GlobalAvgPool2D())
 model.add(keras.layers.Flatten())
 model.add(keras.layers.Dense(10, activation='softmax'))
 model.summary()
+
+# load pre-trained ResNet, expects 224 x 224
+model = keras.applications.resnet50.ResNet50(weights='imagenet')
+images_resized = tf.image.resize(images, [224, 224])
+china_box = [0, 0.03, 1, 0.68]
+flower_box = [0.19, 0.26, 0.86, 0.7]
+images_resized2 = tf.image.crop_and_resize(images, [china_box, flower_box], [0, 1], [224, 224])
+inputs = keras.applications.resnet50.preprocess_input(images_resized * 255)
+y_proba = model.predict(inputs)
+
+top_k = keras.applications.resnet50.decode_predictions(y_proba, top=3)
+for image_idx in range(len(images)):
+    print(f'Image {image_idx}')
+    for class_id, name, y_proba in top_k[image_idx]:
+        print("  {} - {:12s} {:.2f}%".format(class_id, name, y_proba * 100))
+        print()
