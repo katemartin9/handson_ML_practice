@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+from typing import List
+import pandas as pd
 
 
 def generate_time_series(batch_size, n_steps):
@@ -47,3 +49,6 @@ def plot_multiple_forecasts(X, Y, Y_pred):
     plt.axis([0, n_steps + ahead, -1, 1])
     plt.legend(fontsize=14)
 
+
+def load_files(filepaths: List):
+    return [pd.read_csv(filepath).values.tolist() for filepath in filepaths]
