@@ -63,3 +63,6 @@ history = model.fit(dataset, steps_per_epoch=train_size // batch_size,
 def preprocess(texts):
     X = np.array(tokenizer.texts_to_sequences(texts)) - 1
     return tf.one_hot(X, max_id)
+
+
+model.save('shakespeare_gen_model.h5')
