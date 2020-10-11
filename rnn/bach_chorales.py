@@ -39,6 +39,7 @@ assert max_note == 81
 # play_chords(train_chorales[index])
 
 
+# Model that predicts the next cord given all the previous chords
 def create_target(batch):
     X = batch[:, :-1]
     Y = batch[:, 1:]  # predict next note in each arpegio, at each step
@@ -78,7 +79,41 @@ train_set = bach_dataset(train_chorales, shuffle_buffer_size=1000)
 valid_set = bach_dataset(valid_chorales)
 test_set = bach_dataset(test_chorales)
 
+n_embedding_dims = 5
+model = keras.models.Sequential([
+    keras.layers.Embedding(input_dim=n_notes,
+                           output_dim=n_embedding_dims,
+                           input_shape=[None]),
+    keras.layers.Conv1D(32, kernel_size=2,
+                        padding="causal",
+                        activation="relu"),
+    keras.layers.BatchNormalization(),  # for faster better convergence
+    keras.layers.Conv1D(48, kernel_size=2,
+                        padding="causal",
+                        activation='relu',
+                        dilation_rate=2),
+    keras.layers.BatchNormalization(),
+    keras.layers.Conv1D(64, kernel_size=2,
+                        padding='causal',
+                        activation='relu',
+                        dilation_rate=4),
+    keras.layers.BatchNormalization(),
+    keras.layers.Conv1D(96, kernel_size=2,
+                        padding="causal",
+                        activation="relu",
+                        dilation_rate=8),
+    keras.layers.BatchNormalization(),
+    keras.layers.LSTM(256, return_sequences=True),  # catching long-term patterns
+    keras.layers.Dense(n_notes, activation="softmax")
+])
 
+model.summary()
 
+optimizer = keras.optimizers.Nadam(lr=1e-3)
+model.compile(loss="sparse_categorical_crossentropy",
+              optimizer=optimizer,
+              metrics=["accuracy"])
+model.fit(train_set, epochs=20, validation_data=valid_set)
 
-
+model.save('my_back_model.h5')
+model.evaluate(test_set)
